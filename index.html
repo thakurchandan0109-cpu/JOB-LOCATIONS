@@ -3,59 +3,63 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Job Locations</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-*{box-sizing:border-box}
+
+*{
+  box-sizing:border-box;
+}
 
 body{
   margin:0;
   font-family:Arial,sans-serif;
   background:#f4f7fb;
-  color:#172033
+  color:#172033;
 }
 
 .hero{
   background:linear-gradient(135deg,#111827,#1e3a8a);
-  color:#fff;
+  color:white;
   padding:42px 20px;
-  text-align:center
+  text-align:center;
 }
 
 .hero h1{
   margin:0 0 10px;
-  font-size:38px
+  font-size:38px;
 }
 
 .hero p{
   margin:0;
-  opacity:.85
+  opacity:.85;
 }
 
 .wrap{
   max-width:1000px;
   margin:30px auto;
-  padding:0 16px
+  padding:0 16px;
 }
 
 .panel{
-  background:#fff;
+  background:white;
   border-radius:18px;
   padding:22px;
   box-shadow:0 8px 30px #00000012;
-  margin-bottom:22px
+  margin-bottom:22px;
 }
 
 .panel h2{
-  margin-top:0
+  margin-top:0;
 }
 
 .form{
   display:grid;
   grid-template-columns:1fr 1fr auto;
-  gap:12px
+  gap:12px;
 }
 
 input{
@@ -63,7 +67,12 @@ input{
   padding:13px 14px;
   border:1px solid #d8deea;
   border-radius:10px;
-  font-size:15px
+  font-size:15px;
+  outline:none;
+}
+
+input:focus{
+  border-color:#2563eb;
 }
 
 button{
@@ -71,48 +80,57 @@ button{
   border-radius:10px;
   padding:13px 20px;
   background:#2563eb;
-  color:#fff;
+  color:white;
   font-weight:700;
-  cursor:pointer
+  cursor:pointer;
+}
+
+button:hover{
+  opacity:.9;
 }
 
 button:disabled{
   opacity:.6;
-  cursor:not-allowed
+  cursor:not-allowed;
 }
 
 .search{
-  margin-bottom:18px
+  margin-bottom:18px;
 }
 
 .grid{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
-  gap:16px
+  gap:16px;
 }
 
 .card{
-  background:#fff;
+  background:white;
   border:1px solid #e6eaf0;
   border-radius:16px;
   padding:18px;
-  box-shadow:0 5px 18px #0000000d
+  box-shadow:0 5px 18px #0000000d;
 }
 
 .card h3{
   margin:0 0 12px;
-  font-size:19px
+  font-size:19px;
 }
 
 .card a{
   color:#2563eb;
   text-decoration:none;
-  font-weight:700
+  font-weight:700;
 }
 
-.muted,.status{
+.muted{
   color:#667085;
-  font-size:14px
+  font-size:14px;
+}
+
+.status{
+  color:#667085;
+  font-size:14px;
 }
 
 .error{
@@ -121,50 +139,113 @@ button:disabled{
   padding:12px;
   border-radius:10px;
   display:none;
-  margin-top:12px
+  margin-top:12px;
 }
 
 .success{
-  color:#027a48;
+  color:#067647;
   background:#ecfdf3;
   padding:12px;
   border-radius:10px;
   display:none;
-  margin-top:12px
+  margin-top:12px;
 }
 
-.auth{
+.admin-buttons{
+  display:flex;
+  gap:8px;
+  margin-top:15px;
+}
+
+.edit-btn{
+  background:#f59e0b;
+  padding:9px 13px;
+}
+
+.delete-btn{
+  background:#dc2626;
+  padding:9px 13px;
+}
+
+.cancel-btn{
+  background:#667085;
+}
+
+.login-panel{
   display:none;
-  margin-bottom:22px
 }
 
-.auth-buttons{
+.user-info{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:15px;
+}
+
+.logout-btn{
+  background:#111827;
+  padding:9px 15px;
+}
+
+.modal{
+  display:none;
+  position:fixed;
+  z-index:1000;
+  left:0;
+  top:0;
+  width:100%;
+  height:100%;
+  background:#00000080;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+}
+
+.modal-box{
+  background:white;
+  width:100%;
+  max-width:500px;
+  padding:25px;
+  border-radius:18px;
+  box-shadow:0 20px 60px #00000040;
+}
+
+.modal-box h2{
+  margin-top:0;
+}
+
+.modal-actions{
   display:flex;
   gap:10px;
-  flex-wrap:wrap
+  margin-top:15px;
 }
 
-#loginBtn{
-  background:#2563eb
-}
-
-#logoutBtn{
-  background:#dc2626
-}
-
-#adminStatus{
-  margin-top:10px
+.modal-actions button{
+  flex:1;
 }
 
 @media(max-width:700px){
+
   .form{
-    grid-template-columns:1fr
+    grid-template-columns:1fr;
   }
 
   .hero h1{
-    font-size:30px
+    font-size:30px;
   }
+
+  .admin-buttons{
+    flex-direction:column;
+  }
+
+  .modal-actions{
+    flex-direction:column;
+  }
+
 }
+
 </style>
 </head>
 
@@ -177,89 +258,155 @@ button:disabled{
 
 <main class="wrap">
 
-  <!-- ADMIN LOGIN -->
-  <section class="panel auth" id="authPanel">
+<!-- ADMIN LOGIN -->
 
-    <h2>🔐 Admin Login</h2>
+<section class="panel login-panel" id="loginPanel">
 
-    <div class="form">
-      <input
-        id="email"
-        type="email"
-        placeholder="Admin email"
-      >
+  <h2>🔐 Admin Login</h2>
 
-      <input
-        id="password"
-        type="password"
-        placeholder="Password"
-      >
-
-      <button id="loginBtn">
-        Login
-      </button>
-    </div>
-
-    <div id="authError" class="error"></div>
-
-    <div id="adminStatus" class="muted"></div>
-
-    <div class="auth-buttons">
-      <button id="logoutBtn" style="display:none">
-        Logout
-      </button>
-    </div>
-
-  </section>
-
-
-  <!-- ADD LOCATION -->
-  <section class="panel" id="addPanel" style="display:none">
-
-    <h2>➕ Add Job Location</h2>
-
-    <div class="form">
-
-      <input
-        id="name"
-        placeholder="Location name (e.g. Okhla Bird Sanctuary)"
-      >
-
-      <input
-        id="url"
-        placeholder="Google Maps / location link"
-      >
-
-      <button id="addBtn">
-        Add Location
-      </button>
-
-    </div>
-
-    <div id="error" class="error"></div>
-    <div id="success" class="success"></div>
-
-  </section>
-
-
-  <!-- LOCATIONS -->
-  <section class="panel">
+  <div class="form" style="grid-template-columns:1fr 1fr auto;">
 
     <input
-      class="search"
-      id="search"
-      placeholder="🔎 Search job locations..."
+      id="loginEmail"
+      type="email"
+      placeholder="Admin email"
     >
 
-    <div id="locations" class="grid"></div>
+    <input
+      id="loginPassword"
+      type="password"
+      placeholder="Password"
+    >
 
-    <div id="status" class="status">
-      Loading locations...
+    <button id="loginBtn">
+      Login
+    </button>
+
+  </div>
+
+  <div id="loginError" class="error"></div>
+
+</section>
+
+
+<!-- ADMIN AREA -->
+
+<section class="panel" id="adminPanel" style="display:none;">
+
+  <div class="user-info">
+
+    <div>
+      <strong>🔐 Admin Mode</strong>
+      <div class="muted" id="adminEmail"></div>
     </div>
 
-  </section>
+    <button
+      class="logout-btn"
+      id="logoutBtn"
+    >
+      Logout
+    </button>
+
+  </div>
+
+  <h2>➕ Add Job Location</h2>
+
+  <div class="form">
+
+    <input
+      id="name"
+      placeholder="Location name (e.g. Okhla Bird Sanctuary)"
+    >
+
+    <input
+      id="url"
+      placeholder="Google Maps / location link"
+    >
+
+    <button id="addBtn">
+      Add Location
+    </button>
+
+  </div>
+
+  <div id="error" class="error"></div>
+
+  <div id="success" class="success"></div>
+
+</section>
+
+
+<!-- LOCATIONS -->
+
+<section class="panel">
+
+  <input
+    class="search"
+    id="search"
+    placeholder="🔎 Search job locations..."
+  >
+
+  <div id="locations" class="grid"></div>
+
+  <div
+    id="status"
+    class="status"
+  >
+    Loading locations...
+  </div>
+
+</section>
 
 </main>
+
+
+<!-- EDIT MODAL -->
+
+<div
+  class="modal"
+  id="editModal"
+>
+
+  <div class="modal-box">
+
+    <h2>✏️ Update Location</h2>
+
+    <input
+      id="editName"
+      placeholder="Location name"
+      style="margin-bottom:12px;"
+    >
+
+    <input
+      id="editUrl"
+      placeholder="Google Maps link"
+    >
+
+    <div class="modal-actions">
+
+      <button
+        class="cancel-btn"
+        id="cancelEdit"
+      >
+        Cancel
+      </button>
+
+      <button
+        id="saveEdit"
+      >
+        Save Changes
+      </button>
+
+    </div>
+
+    <div
+      id="editError"
+      class="error"
+    ></div>
+
+  </div>
+
+</div>
 
 
 <script>
@@ -270,6 +417,9 @@ const SUPABASE_URL =
 const SUPABASE_KEY =
 "sb_publishable_iOaSV2iIxiqd6yhqkPq-Sw_odBOgt-K";
 
+const ADMIN_EMAIL =
+"thakurchandan0109@gmail.com";
+
 const db =
 window.supabase.createClient(
   SUPABASE_URL,
@@ -277,6 +427,174 @@ window.supabase.createClient(
 );
 
 let allLocations = [];
+let editingId = null;
+
+
+/* =========================
+   AUTH CHECK
+========================= */
+
+async function checkUser(){
+
+  const {
+    data:{
+      session
+    }
+  } = await db.auth.getSession();
+
+  if(session && session.user){
+
+    if(
+      session.user.email.toLowerCase()
+      ===
+      ADMIN_EMAIL.toLowerCase()
+    ){
+
+      showAdmin(session.user);
+
+    }else{
+
+      await db.auth.signOut();
+      hideAdmin();
+
+    }
+
+  }else{
+
+    hideAdmin();
+
+  }
+
+}
+
+
+/* =========================
+   SHOW ADMIN
+========================= */
+
+function showAdmin(user){
+
+  document.getElementById("adminPanel")
+    .style.display="block";
+
+  document.getElementById("loginPanel")
+    .style.display="none";
+
+  document.getElementById("adminEmail")
+    .textContent=user.email;
+
+}
+
+
+/* =========================
+   HIDE ADMIN
+========================= */
+
+function hideAdmin(){
+
+  document.getElementById("adminPanel")
+    .style.display="none";
+
+  document.getElementById("loginPanel")
+    .style.display="block";
+
+}
+
+
+/* =========================
+   LOGIN
+========================= */
+
+document
+.getElementById("loginBtn")
+.addEventListener("click",async()=>{
+
+  const email =
+    document
+    .getElementById("loginEmail")
+    .value
+    .trim();
+
+  const password =
+    document
+    .getElementById("loginPassword")
+    .value;
+
+  if(!email || !password){
+
+    showLoginError(
+      "Email aur password dono bharna zaroori hai."
+    );
+
+    return;
+  }
+
+  if(
+    email.toLowerCase()
+    !==
+    ADMIN_EMAIL.toLowerCase()
+  ){
+
+    showLoginError(
+      "Sirf admin account login kar sakta hai."
+    );
+
+    return;
+  }
+
+  const btn =
+    document.getElementById("loginBtn");
+
+  btn.disabled=true;
+  btn.textContent="Logging in...";
+
+  const {
+    data,
+    error
+  } =
+  await db.auth.signInWithPassword({
+    email,
+    password
+  });
+
+  btn.disabled=false;
+  btn.textContent="Login";
+
+  if(error){
+
+    showLoginError(
+      "Login failed: "+error.message
+    );
+
+    return;
+  }
+
+  if(data.user){
+
+    showAdmin(data.user);
+
+    document
+      .getElementById("loginPassword")
+      .value="";
+
+  }
+
+});
+
+
+/* =========================
+   LOGOUT
+========================= */
+
+document
+.getElementById("logoutBtn")
+.addEventListener("click",async()=>{
+
+  await db.auth.signOut();
+
+  hideAdmin();
+
+});
 
 
 /* =========================
@@ -288,30 +606,42 @@ async function loadLocations(){
   const {
     data,
     error
-  } = await db
-    .from("locations")
-    .select("id,name,url,created_at")
-    .order("created_at",{ascending:false});
+  } =
+  await db
+  .from("locations")
+  .select(
+    "id,name,url,created_at"
+  )
+  .order(
+    "created_at",
+    {
+      ascending:false
+    }
+  );
 
   if(error){
 
     showError(
       "Locations load nahi ho pa rahi: "
-      + error.message
+      +error.message
     );
 
-    document.getElementById("status").textContent="";
+    document
+      .getElementById("status")
+      .textContent="";
+
     return;
   }
 
   allLocations=data || [];
 
   render(allLocations);
+
 }
 
 
 /* =========================
-   RENDER LOCATIONS
+   RENDER
 ========================= */
 
 function render(items){
@@ -334,6 +664,7 @@ function render(items){
 
   status.textContent="";
 
+
   items.forEach(x=>{
 
     const card =
@@ -341,27 +672,88 @@ function render(items){
 
     card.className="card";
 
+
     const h =
       document.createElement("h3");
 
-    h.textContent="📍 "+x.name;
+    h.textContent =
+      "📍 "+x.name;
+
 
     const p =
       document.createElement("p");
 
     p.className="muted";
 
-    p.textContent="Job location";
+    p.textContent =
+      "Job location";
+
 
     const a =
       document.createElement("a");
 
     a.href=x.url;
-    a.target="_blank";
-    a.rel="noopener noreferrer";
-    a.textContent="Open Location →";
 
-    card.append(h,p,a);
+    a.target="_blank";
+
+    a.rel=
+      "noopener noreferrer";
+
+    a.textContent=
+      "Open Location →";
+
+
+    card.append(
+      h,
+      p,
+      a
+    );
+
+
+    /* ADMIN BUTTONS */
+
+    const adminButtons =
+      document.createElement("div");
+
+    adminButtons.className=
+      "admin-buttons";
+
+    const editButton =
+      document.createElement("button");
+
+    editButton.className=
+      "edit-btn";
+
+    editButton.textContent=
+      "✏️ Edit";
+
+    editButton.onclick=
+      ()=>openEdit(x);
+
+
+    const deleteButton =
+      document.createElement("button");
+
+    deleteButton.className=
+      "delete-btn";
+
+    deleteButton.textContent=
+      "🗑️ Delete";
+
+    deleteButton.onclick=
+      ()=>deleteLocation(x);
+
+
+    adminButtons.append(
+      editButton,
+      deleteButton
+    );
+
+
+    card.appendChild(
+      adminButtons
+    );
+
 
     box.appendChild(card);
 
@@ -376,163 +768,26 @@ function render(items){
 
 document
 .getElementById("search")
-.addEventListener("input",e=>{
+.addEventListener(
+  "input",
+  e=>{
 
-  const q =
-    e.target.value
-    .toLowerCase()
-    .trim();
-
-  render(
-    allLocations.filter(x =>
-      (x.name || "")
+    const q =
+      e.target.value
       .toLowerCase()
-      .includes(q)
-    )
-  );
+      .trim();
 
-});
-
-
-/* =========================
-   LOGIN
-========================= */
-
-document
-.getElementById("loginBtn")
-.addEventListener("click",async()=>{
-
-  const email =
-    document.getElementById("email")
-    .value
-    .trim();
-
-  const password =
-    document.getElementById("password")
-    .value;
-
-  if(!email || !password){
-
-    showAuthError(
-      "Email aur password dono bharna zaroori hai."
+    render(
+      allLocations.filter(
+        x =>
+          (x.name || "")
+          .toLowerCase()
+          .includes(q)
+      )
     );
 
-    return;
   }
-
-  const btn =
-    document.getElementById("loginBtn");
-
-  btn.disabled=true;
-  btn.textContent="Logging in...";
-
-  const {
-    data,
-    error
-  } = await db.auth.signInWithPassword({
-    email,
-    password
-  });
-
-  btn.disabled=false;
-  btn.textContent="Login";
-
-  if(error){
-
-    showAuthError(
-      "Login failed: "
-      + error.message
-    );
-
-    return;
-  }
-
-  hideAuthError();
-
-  updateAuthUI(data.session);
-
-});
-
-
-/* =========================
-   LOGOUT
-========================= */
-
-document
-.getElementById("logoutBtn")
-.addEventListener("click",async()=>{
-
-  await db.auth.signOut();
-
-  updateAuthUI(null);
-
-});
-
-
-/* =========================
-   AUTH UI
-========================= */
-
-function updateAuthUI(session){
-
-  const authPanel =
-    document.getElementById("authPanel");
-
-  const addPanel =
-    document.getElementById("addPanel");
-
-  const loginBtn =
-    document.getElementById("loginBtn");
-
-  const logoutBtn =
-    document.getElementById("logoutBtn");
-
-  const adminStatus =
-    document.getElementById("adminStatus");
-
-  const email =
-    document.getElementById("email");
-
-  const password =
-    document.getElementById("password");
-
-
-  authPanel.style.display="block";
-
-
-  if(session){
-
-    addPanel.style.display="block";
-
-    loginBtn.style.display="none";
-
-    logoutBtn.style.display="inline-block";
-
-    email.style.display="none";
-
-    password.style.display="none";
-
-    adminStatus.textContent =
-      "✅ Admin logged in";
-
-  }else{
-
-    addPanel.style.display="none";
-
-    loginBtn.style.display="inline-block";
-
-    logoutBtn.style.display="none";
-
-    email.style.display="block";
-
-    password.style.display="block";
-
-    adminStatus.textContent =
-      "Login karke location add karein.";
-
-  }
-
-}
+);
 
 
 /* =========================
@@ -541,58 +796,50 @@ function updateAuthUI(session){
 
 document
 .getElementById("addBtn")
-.addEventListener("click",async()=>{
+.addEventListener(
+  "click",
+  async()=>{
 
-  const name =
-    document.getElementById("name")
-    .value
-    .trim();
+    const name =
+      document
+      .getElementById("name")
+      .value
+      .trim();
 
-  const url =
-    document.getElementById("url")
-    .value
-    .trim();
-
-  if(!name || !url){
-
-    showError(
-      "Location name aur link dono bharna zaroori hai."
-    );
-
-    return;
-  }
-
-  hideError();
-  hideSuccess();
-
-  const btn =
-    document.getElementById("addBtn");
-
-  btn.disabled=true;
-  btn.textContent="Adding...";
+    const url =
+      document
+      .getElementById("url")
+      .value
+      .trim();
 
 
-  const {
-    data: sessionData
-  } = await db.auth.getSession();
+    if(!name || !url){
+
+      showError(
+        "Location name aur link dono bharna zaroori hai."
+      );
+
+      return;
+    }
 
 
-  if(!sessionData.session){
-
-    btn.disabled=false;
-    btn.textContent="Add Location";
-
-    showError(
-      "Pehle admin login karein."
-    );
-
-    return;
-  }
+    hideError();
 
 
-  const {
-    error
-  } = await db
+    const btn =
+      document
+      .getElementById("addBtn");
+
+    btn.disabled=true;
+
+    btn.textContent=
+      "Adding...";
+
+
+    const {
+      error
+    } =
+    await db
     .from("locations")
     .insert([
       {
@@ -602,33 +849,243 @@ document
     ]);
 
 
-  btn.disabled=false;
-  btn.textContent="Add Location";
+    btn.disabled=false;
+
+    btn.textContent=
+      "Add Location";
+
+
+    if(error){
+
+      showError(
+        "Add nahi hua: "
+        +error.message
+      );
+
+      return;
+    }
+
+
+    document
+      .getElementById("name")
+      .value="";
+
+    document
+      .getElementById("url")
+      .value="";
+
+
+    showSuccess(
+      "✅ Location successfully added."
+    );
+
+
+    await loadLocations();
+
+  }
+);
+
+
+/* =========================
+   OPEN EDIT
+========================= */
+
+function openEdit(location){
+
+  editingId =
+    location.id;
+
+  document
+    .getElementById("editName")
+    .value =
+    location.name;
+
+  document
+    .getElementById("editUrl")
+    .value =
+    location.url;
+
+  document
+    .getElementById("editError")
+    .style.display="none";
+
+  document
+    .getElementById("editModal")
+    .style.display="flex";
+
+}
+
+
+/* =========================
+   CANCEL EDIT
+========================= */
+
+document
+.getElementById("cancelEdit")
+.addEventListener(
+  "click",
+  ()=>{
+
+    editingId=null;
+
+    document
+      .getElementById("editModal")
+      .style.display="none";
+
+  }
+);
+
+
+/* =========================
+   SAVE UPDATE
+========================= */
+
+document
+.getElementById("saveEdit")
+.addEventListener(
+  "click",
+  async()=>{
+
+    if(!editingId){
+
+      return;
+    }
+
+
+    const name =
+      document
+      .getElementById("editName")
+      .value
+      .trim();
+
+    const url =
+      document
+      .getElementById("editUrl")
+      .value
+      .trim();
+
+
+    if(!name || !url){
+
+      showEditError(
+        "Location name aur link dono bharna zaroori hai."
+      );
+
+      return;
+    }
+
+
+    const btn =
+      document
+      .getElementById("saveEdit");
+
+    btn.disabled=true;
+
+    btn.textContent=
+      "Updating...";
+
+
+    const {
+      error
+    } =
+    await db
+    .from("locations")
+    .update({
+      name:name,
+      url:url
+    })
+    .eq(
+      "id",
+      editingId
+    );
+
+
+    btn.disabled=false;
+
+    btn.textContent=
+      "Save Changes";
+
+
+    if(error){
+
+      showEditError(
+        "Update nahi hua: "
+        +error.message
+      );
+
+      return;
+    }
+
+
+    document
+      .getElementById("editModal")
+      .style.display="none";
+
+    editingId=null;
+
+
+    showSuccess(
+      "✅ Location successfully updated."
+    );
+
+
+    await loadLocations();
+
+  }
+);
+
+
+/* =========================
+   DELETE LOCATION
+========================= */
+
+async function deleteLocation(location){
+
+  const confirmDelete =
+    confirm(
+      'Kya aap "'+
+      location.name+
+      '" ko delete karna chahte hain?'
+    );
+
+
+  if(!confirmDelete){
+
+    return;
+  }
+
+
+  const {
+    error
+  } =
+  await db
+  .from("locations")
+  .delete()
+  .eq(
+    "id",
+    location.id
+  );
 
 
   if(error){
 
     showError(
-      "Add nahi hua: "
-      + error.message
+      "Delete nahi hua: "
+      +error.message
     );
 
     return;
   }
 
 
-  document.getElementById("name").value="";
-  document.getElementById("url").value="";
-
-
   showSuccess(
-    "✅ Location successfully add ho gayi."
+    "🗑️ Location successfully deleted."
   );
 
 
   await loadLocations();
 
-});
+}
 
 
 /* =========================
@@ -641,6 +1098,7 @@ function showError(msg){
     document.getElementById("error");
 
   e.textContent=msg;
+
   e.style.display="block";
 
 }
@@ -648,8 +1106,9 @@ function showError(msg){
 
 function hideError(){
 
-  document.getElementById("error")
-  .style.display="none";
+  document
+    .getElementById("error")
+    .style.display="none";
 
 }
 
@@ -660,34 +1119,41 @@ function showSuccess(msg){
     document.getElementById("success");
 
   e.textContent=msg;
+
   e.style.display="block";
 
+  setTimeout(
+    ()=>{
+      e.style.display="none";
+    },
+    3000
+  );
+
 }
 
 
-function hideSuccess(){
-
-  document.getElementById("success")
-  .style.display="none";
-
-}
-
-
-function showAuthError(msg){
+function showLoginError(msg){
 
   const e =
-    document.getElementById("authError");
+    document
+    .getElementById("loginError");
 
   e.textContent=msg;
+
   e.style.display="block";
 
 }
 
 
-function hideAuthError(){
+function showEditError(msg){
 
-  document.getElementById("authError")
-  .style.display="none";
+  const e =
+    document
+    .getElementById("editError");
+
+  e.textContent=msg;
+
+  e.style.display="block";
 
 }
 
@@ -696,20 +1162,37 @@ function hideAuthError(){
    START
 ========================= */
 
-async function start(){
+checkUser();
 
-  const {
-    data
-  } = await db.auth.getSession();
-
-  updateAuthUI(data.session);
-
-  loadLocations();
-
-}
+loadLocations();
 
 
-start();
+/* =========================
+   AUTH STATE CHANGE
+========================= */
+
+db.auth.onAuthStateChange(
+  (event,session)=>{
+
+    if(
+      session &&
+      session.user &&
+      session.user.email
+      .toLowerCase()
+      ===
+      ADMIN_EMAIL.toLowerCase()
+    ){
+
+      showAdmin(session.user);
+
+    }else{
+
+      hideAdmin();
+
+    }
+
+  }
+);
 
 </script>
 

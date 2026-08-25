@@ -1195,6 +1195,215 @@ db.auth.onAuthStateChange(
 );
 
 </script>
+<!-- PASSWORD RESET SYSTEM -->
+<div id="passwordResetBox" style="
+display:none;
+position:fixed;
+inset:0;
+background:rgba(0,0,0,.65);
+z-index:99999;
+align-items:center;
+justify-content:center;
+padding:20px;
+">
 
+  <div style="
+  background:white;
+  width:100%;
+  max-width:430px;
+  padding:25px;
+  border-radius:18px;
+  box-shadow:0 20px 60px rgba(0,0,0,.3);
+  ">
+
+    <h2 style="margin-top:0;">🔐 Reset Password</h2>
+
+    <p style="color:#667085;">
+      Enter your new admin password.
+    </p>
+
+    <input
+      id="newPassword"
+      type="password"
+      placeholder="New password"
+      style="
+      width:100%;
+      padding:14px;
+      margin:10px 0;
+      border:1px solid #ddd;
+      border-radius:10px;
+      font-size:16px;
+      "
+    >
+
+    <input
+      id="confirmPassword"
+      type="password"
+      placeholder="Confirm new password"
+      style="
+      width:100%;
+      padding:14px;
+      margin:10px 0;
+      border:1px solid #ddd;
+      border-radius:10px;
+      font-size:16px;
+      "
+    >
+
+    <button
+      id="updatePasswordBtn"
+      style="
+      width:100%;
+      padding:14px;
+      background:#2563eb;
+      color:white;
+      border:0;
+      border-radius:10px;
+      font-weight:bold;
+      cursor:pointer;
+      "
+    >
+      Update Password
+    </button>
+
+    <div
+      id="passwordResetMessage"
+      style="
+      margin-top:12px;
+      font-size:14px;
+      "
+    ></div>
+
+  </div>
+</div>
+
+<script>
+
+const PRODUCTION_URL =
+"https://thakurchandan0109-cpu.github.io/JOB-LOCATIONS/";
+
+/* ================================
+   FORGOT PASSWORD
+================================ */
+
+async function sendPasswordReset(email){
+
+  email = (email || "").trim();
+
+  if(!email){
+    alert("Pehle admin email enter karo.");
+    return;
+  }
+
+  const { error } =
+    await db.auth.resetPasswordForEmail(email, {
+
+      redirectTo: PRODUCTION_URL
+
+    });
+
+  if(error){
+
+    alert("Reset email nahi bheja gaya:\n" + error.message);
+
+    return;
+  }
+
+  alert(
+    "Password reset link tumhare email par bhej diya gaya.\n\n" +
+    "Naya email open karke Reset Password button dabao."
+  );
+}
+
+
+/* ================================
+   PASSWORD RECOVERY
+================================ */
+
+db.auth.onAuthStateChange(async (event, session) => {
+
+  if(event === "PASSWORD_RECOVERY"){
+
+    const box =
+      document.getElementById("passwordResetBox");
+
+    if(box){
+      box.style.display = "flex";
+    }
+
+  }
+
+});
+
+
+/* ================================
+   UPDATE PASSWORD
+================================ */
+
+document
+.getElementById("updatePasswordBtn")
+.addEventListener("click", async () => {
+
+  const password =
+    document.getElementById("newPassword").value;
+
+  const confirm =
+    document.getElementById("confirmPassword").value;
+
+  const msg =
+    document.getElementById("passwordResetMessage");
+
+  if(password.length < 6){
+
+    msg.style.color = "#b42318";
+
+    msg.textContent =
+      "Password minimum 6 characters ka hona chahiye.";
+
+    return;
+  }
+
+  if(password !== confirm){
+
+    msg.style.color = "#b42318";
+
+    msg.textContent =
+      "Dono passwords same nahi hain.";
+
+    return;
+  }
+
+  const { error } =
+    await db.auth.updateUser({
+      password: password
+    });
+
+  if(error){
+
+    msg.style.color = "#b42318";
+
+    msg.textContent =
+      "Password update nahi hua: " +
+      error.message;
+
+    return;
+  }
+
+  msg.style.color = "#067647";
+
+  msg.textContent =
+    "✅ Password successfully update ho gaya!";
+
+  setTimeout(async () => {
+
+    await db.auth.signOut();
+
+    window.location.href = PRODUCTION_URL;
+
+  }, 1500);
+
+});
+
+</script>
 </body>
 </html>

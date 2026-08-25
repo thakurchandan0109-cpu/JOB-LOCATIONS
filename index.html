@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Job Locations</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:#f4f7fb;
+  color:#172033
+}
+
+.hero{
+  background:linear-gradient(135deg,#111827,#1e3a8a);
+  color:#fff;
+  padding:42px 20px;
+  text-align:center
+}
+
+.hero h1{
+  margin:0 0 10px;
+  font-size:38px
+}
+
+.hero p{
+  margin:0;
+  opacity:.85
+}
+
+.wrap{
+  max-width:1000px;
+  margin:30px auto;
+  padding:0 16px
+}
+
+.panel{
+  background:#fff;
+  border-radius:18px;
+  padding:22px;
+  box-shadow:0 8px 30px #00000012;
+  margin-bottom:22px
+}
+
+.panel h2{
+  margin-top:0
+}
+
+.form{
+  display:grid;
+  grid-template-columns:1fr 1fr auto;
+  gap:12px
+}
+
+input{
+  width:100%;
+  padding:13px 14px;
+  border:1px solid #d8deea;
+  border-radius:10px;
+  font-size:15px
+}
+
+button{
+  border:0;
+  border-radius:10px;
+  padding:13px 20px;
+  background:#2563eb;
+  color:#fff;
+  font-weight:700;
+  cursor:pointer
+}
+
+button:disabled{
+  opacity:.6;
+  cursor:not-allowed
+}
+
+.search{
+  margin-bottom:18px
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+  gap:16px
+}
+
+.card{
+  background:#fff;
+  border:1px solid #e6eaf0;
+  border-radius:16px;
+  padding:18px;
+  box-shadow:0 5px 18px #0000000d
+}
+
+.card h3{
+  margin:0 0 12px;
+  font-size:19px
+}
+
+.card a{
+  color:#2563eb;
+  text-decoration:none;
+  font-weight:700
+}
+
+.muted,.status{
+  color:#667085;
+  font-size:14px
+}
+
+.error{
+  color:#b42318;
+  background:#fef3f2;
+  padding:12px;
+  border-radius:10px;
+  display:none;
+  margin-top:12px
+}
+
+.success{
+  color:#027a48;
+  background:#ecfdf3;
+  padding:12px;
+  border-radius:10px;
+  display:none;
+  margin-top:12px
+}
+
+.auth{
+  display:none;
+  margin-bottom:22px
+}
+
+.auth-buttons{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap
+}
+
+#loginBtn{
+  background:#2563eb
+}
+
+#logoutBtn{
+  background:#dc2626
+}
+
+#adminStatus{
+  margin-top:10px
+}
+
+@media(max-width:700px){
+  .form{
+    grid-template-columns:1fr
+  }
+
+  .hero h1{
+    font-size:30px
+  }
+}
+</style>
+</head>
+
+<body>
+
+<section class="hero">
+  <h1>📍 Job Locations</h1>
+  <p>Find the latest hiring locations quickly</p>
+</section>
+
+<main class="wrap">
+
+  <!-- ADMIN LOGIN -->
+  <section class="panel auth" id="authPanel">
+
+    <h2>🔐 Admin Login</h2>
+
+    <div class="form">
+      <input
+        id="email"
+        type="email"
+        placeholder="Admin email"
+      >
+
+      <input
+        id="password"
+        type="password"
+        placeholder="Password"
+      >
+
+      <button id="loginBtn">
+        Login
+      </button>
+    </div>
+
+    <div id="authError" class="error"></div>
+
+    <div id="adminStatus" class="muted"></div>
+
+    <div class="auth-buttons">
+      <button id="logoutBtn" style="display:none">
+        Logout
+      </button>
+    </div>
+
+  </section>
+
+
+  <!-- ADD LOCATION -->
+  <section class="panel" id="addPanel" style="display:none">
+
+    <h2>➕ Add Job Location</h2>
+
+    <div class="form">
+
+      <input
+        id="name"
+        placeholder="Location name (e.g. Okhla Bird Sanctuary)"
+      >
+
+      <input
+        id="url"
+        placeholder="Google Maps / location link"
+      >
+
+      <button id="addBtn">
+        Add Location
+      </button>
+
+    </div>
+
+    <div id="error" class="error"></div>
+    <div id="success" class="success"></div>
+
+  </section>
+
+
+  <!-- LOCATIONS -->
+  <section class="panel">
+
+    <input
+      class="search"
+      id="search"
+      placeholder="🔎 Search job locations..."
+    >
+
+    <div id="locations" class="grid"></div>
+
+    <div id="status" class="status">
+      Loading locations...
+    </div>
+
+  </section>
+
+</main>
+
+
+<script>
+
+const SUPABASE_URL =
+"https://uxbrasxagfcwtbngsgbf.supabase.co";
+
+const SUPABASE_KEY =
+"sb_publishable_iOaSV2iIxiqd6yhqkPq-Sw_odBOgt-K";
+
+const db =
+window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+
+let allLocations = [];
+
+
+/* =========================
+   LOAD LOCATIONS
+========================= */
+
+async function loadLocations(){
+
+  const {
+    data,
+    error
+  } = await db
+    .from("locations")
+    .select("id,name,url,created_at")
+    .order("created_at",{ascending:false});
+
+  if(error){
+
+    showError(
+      "Locations load nahi ho pa rahi: "
+      + error.message
+    );
+
+    document.getElementById("status").textContent="";
+    return;
+  }
+
+  allLocations=data || [];
+
+  render(allLocations);
+}
+
+
+/* =========================
+   RENDER LOCATIONS
+========================= */
+
+function render(items){
+
+  const box =
+    document.getElementById("locations");
+
+  const status =
+    document.getElementById("status");
+
+  box.innerHTML="";
+
+  if(!items.length){
+
+    status.textContent =
+      "Abhi koi job location add nahi hai.";
+
+    return;
+  }
+
+  status.textContent="";
+
+  items.forEach(x=>{
+
+    const card =
+      document.createElement("div");
+
+    card.className="card";
+
+    const h =
+      document.createElement("h3");
+
+    h.textContent="📍 "+x.name;
+
+    const p =
+      document.createElement("p");
+
+    p.className="muted";
+
+    p.textContent="Job location";
+
+    const a =
+      document.createElement("a");
+
+    a.href=x.url;
+    a.target="_blank";
+    a.rel="noopener noreferrer";
+    a.textContent="Open Location →";
+
+    card.append(h,p,a);
+
+    box.appendChild(card);
+
+  });
+
+}
+
+
+/* =========================
+   SEARCH
+========================= */
+
+document
+.getElementById("search")
+.addEventListener("input",e=>{
+
+  const q =
+    e.target.value
+    .toLowerCase()
+    .trim();
+
+  render(
+    allLocations.filter(x =>
+      (x.name || "")
+      .toLowerCase()
+      .includes(q)
+    )
+  );
+
+});
+
+
+/* =========================
+   LOGIN
+========================= */
+
+document
+.getElementById("loginBtn")
+.addEventListener("click",async()=>{
+
+  const email =
+    document.getElementById("email")
+    .value
+    .trim();
+
+  const password =
+    document.getElementById("password")
+    .value;
+
+  if(!email || !password){
+
+    showAuthError(
+      "Email aur password dono bharna zaroori hai."
+    );
+
+    return;
+  }
+
+  const btn =
+    document.getElementById("loginBtn");
+
+  btn.disabled=true;
+  btn.textContent="Logging in...";
+
+  const {
+    data,
+    error
+  } = await db.auth.signInWithPassword({
+    email,
+    password
+  });
+
+  btn.disabled=false;
+  btn.textContent="Login";
+
+  if(error){
+
+    showAuthError(
+      "Login failed: "
+      + error.message
+    );
+
+    return;
+  }
+
+  hideAuthError();
+
+  updateAuthUI(data.session);
+
+});
+
+
+/* =========================
+   LOGOUT
+========================= */
+
+document
+.getElementById("logoutBtn")
+.addEventListener("click",async()=>{
+
+  await db.auth.signOut();
+
+  updateAuthUI(null);
+
+});
+
+
+/* =========================
+   AUTH UI
+========================= */
+
+function updateAuthUI(session){
+
+  const authPanel =
+    document.getElementById("authPanel");
+
+  const addPanel =
+    document.getElementById("addPanel");
+
+  const loginBtn =
+    document.getElementById("loginBtn");
+
+  const logoutBtn =
+    document.getElementById("logoutBtn");
+
+  const adminStatus =
+    document.getElementById("adminStatus");
+
+  const email =
+    document.getElementById("email");
+
+  const password =
+    document.getElementById("password");
+
+
+  authPanel.style.display="block";
+
+
+  if(session){
+
+    addPanel.style.display="block";
+
+    loginBtn.style.display="none";
+
+    logoutBtn.style.display="inline-block";
+
+    email.style.display="none";
+
+    password.style.display="none";
+
+    adminStatus.textContent =
+      "✅ Admin logged in";
+
+  }else{
+
+    addPanel.style.display="none";
+
+    loginBtn.style.display="inline-block";
+
+    logoutBtn.style.display="none";
+
+    email.style.display="block";
+
+    password.style.display="block";
+
+    adminStatus.textContent =
+      "Login karke location add karein.";
+
+  }
+
+}
+
+
+/* =========================
+   ADD LOCATION
+========================= */
+
+document
+.getElementById("addBtn")
+.addEventListener("click",async()=>{
+
+  const name =
+    document.getElementById("name")
+    .value
+    .trim();
+
+  const url =
+    document.getElementById("url")
+    .value
+    .trim();
+
+  if(!name || !url){
+
+    showError(
+      "Location name aur link dono bharna zaroori hai."
+    );
+
+    return;
+  }
+
+  hideError();
+  hideSuccess();
+
+  const btn =
+    document.getElementById("addBtn");
+
+  btn.disabled=true;
+  btn.textContent="Adding...";
+
+
+  const {
+    data: sessionData
+  } = await db.auth.getSession();
+
+
+  if(!sessionData.session){
+
+    btn.disabled=false;
+    btn.textContent="Add Location";
+
+    showError(
+      "Pehle admin login karein."
+    );
+
+    return;
+  }
+
+
+  const {
+    error
+  } = await db
+    .from("locations")
+    .insert([
+      {
+        name:name,
+        url:url
+      }
+    ]);
+
+
+  btn.disabled=false;
+  btn.textContent="Add Location";
+
+
+  if(error){
+
+    showError(
+      "Add nahi hua: "
+      + error.message
+    );
+
+    return;
+  }
+
+
+  document.getElementById("name").value="";
+  document.getElementById("url").value="";
+
+
+  showSuccess(
+    "✅ Location successfully add ho gayi."
+  );
+
+
+  await loadLocations();
+
+});
+
+
+/* =========================
+   ERROR / SUCCESS
+========================= */
+
+function showError(msg){
+
+  const e =
+    document.getElementById("error");
+
+  e.textContent=msg;
+  e.style.display="block";
+
+}
+
+
+function hideError(){
+
+  document.getElementById("error")
+  .style.display="none";
+
+}
+
+
+function showSuccess(msg){
+
+  const e =
+    document.getElementById("success");
+
+  e.textContent=msg;
+  e.style.display="block";
+
+}
+
+
+function hideSuccess(){
+
+  document.getElementById("success")
+  .style.display="none";
+
+}
+
+
+function showAuthError(msg){
+
+  const e =
+    document.getElementById("authError");
+
+  e.textContent=msg;
+  e.style.display="block";
+
+}
+
+
+function hideAuthError(){
+
+  document.getElementById("authError")
+  .style.display="none";
+
+}
+
+
+/* =========================
+   START
+========================= */
+
+async function start(){
+
+  const {
+    data
+  } = await db.auth.getSession();
+
+  updateAuthUI(data.session);
+
+  loadLocations();
+
+}
+
+
+start();
+
+</script>
+
+</body>
+</html>

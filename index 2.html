@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#111827">
+<title>Job Locations</title>
+<style>
+:root{--bg:#f3f5f7;--card:#fff;--text:#111827;--muted:#64748b;--dark:#111827;--blue:#2563eb;--green:#16a34a;--red:#dc2626}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,Arial,sans-serif;background:var(--bg);color:var(--text)}
+header{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;padding:28px 16px 24px;text-align:center}
+header h1{margin:0;font-size:29px}header p{margin:7px 0 0;color:#cbd5e1;font-size:14px}
+.wrap{max-width:760px;margin:auto;padding:16px}.top{display:flex;gap:8px;margin-bottom:12px}
+.search{flex:1;padding:14px 16px;border:0;border-radius:14px;box-shadow:0 2px 12px #0001;font-size:16px;outline:none}
+.adminBtn,.primary,.map{background:var(--blue);color:#fff}.adminBtn{border:0;border-radius:13px;padding:0 15px;font-weight:700}
+.card{background:var(--card);border-radius:18px;padding:16px;margin:11px 0;box-shadow:0 4px 18px #0000000b}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px}.name{font-size:18px;font-weight:800}.meta{color:var(--muted);font-size:13px;margin-top:5px}
+.btns{display:flex;gap:7px;flex-wrap:wrap;margin-top:13px}button,a{border:0;border-radius:10px;padding:10px 12px;font-weight:700;font-size:13px;text-decoration:none;cursor:pointer}
+.share{background:var(--green);color:#fff}.copy{background:#e5e7eb;color:#111827}.edit{background:#f59e0b;color:#fff}.del{background:#fee2e2;color:#991b1b}
+#count{text-align:center;color:var(--muted);font-size:13px;margin:9px}.empty{text-align:center;padding:35px;color:var(--muted)}
+.modal{display:none;position:fixed;inset:0;background:#0008;z-index:10;padding:18px;overflow:auto}.box{background:#fff;max-width:520px;margin:50px auto;border-radius:20px;padding:20px}
+.box h2{margin-top:0}.field{margin:12px 0}.field label{display:block;font-size:13px;font-weight:700;margin-bottom:6px}
+.field input{width:100%;padding:12px;border:1px solid #d1d5db;border-radius:10px;font-size:15px}.actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
+.secondary{background:#e5e7eb;color:#111827}.danger{background:var(--red);color:#fff}
+.note{font-size:12px;color:var(--muted);line-height:1.5;background:#f8fafc;padding:10px;border-radius:10px;margin-top:10px}
+</style>
+</head>
+<body>
+<header><h1>📍 Job Locations</h1><p>Search a location and open it directly in Google Maps</p></header>
+<div class="wrap">
+  <div class="top">
+    <input id="search" class="search" placeholder="🔍 Search location..." oninput="render()">
+    <button class="adminBtn" onclick="openAdmin()">⚙️ Admin</button>
+  </div>
+  <div id="count"></div><div id="list"></div>
+</div>
+
+<div class="modal" id="adminModal">
+<div class="box">
+<h2 id="modalTitle">Admin</h2>
+<div id="adminLogin">
+  <div class="field"><label>Admin PIN</label><input id="pin" type="password" inputmode="numeric" placeholder="Enter PIN"></div>
+  <div class="actions"><button class="secondary" onclick="closeModal()">Cancel</button><button class="primary" onclick="login()">Login</button></div>
+  <div class="note">Demo PIN: <b>2580</b>. Change it in the code before publishing if you want a private admin panel.</div>
+</div>
+<div id="adminPanel" style="display:none">
+  <div class="actions" style="justify-content:space-between;margin-top:0">
+    <button class="primary" onclick="newLocation()">➕ Add Location</button>
+    <button class="secondary" onclick="exportData()">⬇️ Backup</button>
+  </div>
+  <div id="adminList"></div>
+  <div class="actions"><button class="secondary" onclick="closeModal()">Close</button></div>
+</div>
+</div></div>
+
+<div class="modal" id="editModal">
+<div class="box">
+<h2 id="editTitle">Add Location</h2>
+<input type="hidden" id="editIndex">
+<div class="field"><label>Location Name</label><input id="locName" placeholder="e.g. Sangam Vihar"></div>
+<div class="field"><label>Google Maps Link</label><input id="locUrl" placeholder="Paste Google Maps link"></div>
+<div class="field"><label>Job / Extra Info (optional)</label><input id="locMeta" placeholder="e.g. Delivery Executive"></div>
+<div class="actions"><button class="secondary" onclick="closeEdit()">Cancel</button><button class="primary" onclick="saveLocation()">Save</button></div>
+</div></div>
+
+<script>
+const initial=[
+["Sangam Vihar","https://maps.app.goo.gl/pEtTXmNvWBTJn6jb7",""],
+["Aya Nagar","https://maps.app.goo.gl/Jo2HUHrDjzGPSzQj6",""],
+["Jasola","https://maps.app.goo.gl/UUjAnWvdNP9rCqs88",""],
+["Sant Nagar","https://maps.app.goo.gl/SCyVYXHEsc5zCxXd9",""],
+["Madangiri","https://maps.app.goo.gl/UvgsFrfcdQhDxWZ99",""],
+["Shakti Vihar","https://maps.app.goo.gl/1qg3FRs7KmZ8K1B69",""],
+["NFC","https://maps.app.goo.gl/BH3WRUKaYJheoMWG9",""],
+["Sainik Farm","https://www.google.com/maps?q=28.506641,77.199562",""],
+["South Ex – Adjoining TVS","https://www.google.com/maps?q=28.574221,77.221481",""],
+["Chattarpur","https://www.google.com/maps?q=28.49566389,77.184415",""],
+["Jangpura","https://www.google.com/maps?q=28.58173,77.250427",""],
+["Lado Sarai","https://www.google.com/maps?q=28.524082,77.1933",""],
+["Vasant Vihar","https://maps.google.com/?q=28.571104,77.158997",""],
+["Jia Sarai","https://maps.app.goo.gl/erHk9dqHf3SWVTtU9?g_st=ic",""],
+["Safdarjung","https://maps.app.goo.gl/jVvEF3neVc5acV2o7?g_st=ic",""]
+];
+let locations=JSON.parse(localStorage.getItem("jobLocationsV2")||"null")||initial;
+function persist(){localStorage.setItem("jobLocationsV2",JSON.stringify(locations))}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function render(){
+ const q=document.getElementById('search').value.toLowerCase().trim();
+ const data=locations.map((x,i)=>({...{x,i}})).filter(o=>o.x[0].toLowerCase().includes(q)||o.x[2].toLowerCase().includes(q));
+ document.getElementById('count').textContent=data.length+" location"+(data.length===1?"":"s");
+ document.getElementById('list').innerHTML=data.length?data.map(o=>{
+  const x=o.x,i=o.i;
+  return `<div class="card"><div class="row"><div><div class="name">📍 ${esc(x[0])}</div>${x[2]?`<div class="meta">${esc(x[2])}</div>`:""}</div></div>
+  <div class="btns"><a class="map" target="_blank" rel="noopener" href="${esc(x[1])}">🗺️ Open Maps</a>
+  <button class="share" onclick="shareLoc(${i})">📲 Share</button><button class="copy" onclick="copyLoc(${i})">🔗 Copy</button></div></div>`
+ }).join(""):`<div class="empty">No location found.</div>`;
+}
+async function shareLoc(i){const x=locations[i];if(navigator.share){try{await navigator.share({title:x[0],text:"📍 "+x[0]+(x[2]?"\n"+x[2]:""),url:x[1]})}catch(e){}}else{copyLoc(i)}}
+async function copyLoc(i){await navigator.clipboard.writeText(locations[i][1]);alert("Location link copied!")}
+function openAdmin(){document.getElementById('adminModal').style.display='block';document.getElementById('adminLogin').style.display='block';document.getElementById('adminPanel').style.display='none';document.getElementById('pin').value=''}
+function closeModal(){document.getElementById('adminModal').style.display='none'}
+function login(){if(document.getElementById('pin').value==="2580"){document.getElementById('adminLogin').style.display='none';document.getElementById('adminPanel').style.display='block';renderAdmin()}else alert("Wrong PIN")}
+function renderAdmin(){document.getElementById('adminList').innerHTML=locations.map((x,i)=>`<div class="card"><div class="name">${esc(x[0])}</div><div class="btns"><button class="edit" onclick="editLocation(${i})">✏️ Edit</button><button class="del" onclick="deleteLocation(${i})">🗑️ Delete</button></div></div>`).join("")}
+function newLocation(){document.getElementById('editIndex').value="";document.getElementById('locName').value="";document.getElementById('locUrl').value="";document.getElementById('locMeta').value="";document.getElementById('editTitle').textContent="Add Location";document.getElementById('editModal').style.display='block'}
+function editLocation(i){let x=locations[i];document.getElementById('editIndex').value=i;document.getElementById('locName').value=x[0];document.getElementById('locUrl').value=x[1];document.getElementById('locMeta').value=x[2];document.getElementById('editTitle').textContent="Edit Location";document.getElementById('editModal').style.display='block'}
+function closeEdit(){document.getElementById('editModal').style.display='none'}
+function saveLocation(){let n=document.getElementById('locName').value.trim(),u=document.getElementById('locUrl').value.trim(),m=document.getElementById('locMeta').value.trim(),idx=document.getElementById('editIndex').value;if(!n||!u){alert("Location name and Maps link are required.");return}let item=[n,u,m];if(idx==="")locations.push(item);else locations[Number(idx)]=item;persist();closeEdit();render();renderAdmin()}
+function deleteLocation(i){if(confirm("Delete "+locations[i][0]+"?")){locations.splice(i,1);persist();render();renderAdmin()}}
+function exportData(){let b=new Blob([JSON.stringify(locations,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="job-locations-backup.json";a.click();URL.revokeObjectURL(a.href)}
+render();
+</script>
+</body>
+</html>
